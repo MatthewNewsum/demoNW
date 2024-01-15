@@ -1,0 +1,44 @@
+resource "aws_instance" "web" {
+  ami           = "ami-0c7217cdde317cfec" #need ubuntu
+  instance_type = "t2.micro" # This is the instance type
+  subnet_id     = aws_subnet.public_subnet_1.id
+  tags = {
+    Name = "SimpleWebServer"
+  }
+  associate_public_ip_address = true
+  vpc_security_group_ids      = [aws_security_group.web_server_sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt-get update -y
+              sudo apt-get install -y apache2
+              sudo systemctl start apache2
+              sudo systemctl enable apache2
+              echo 'Hello Matt' | sudo tee /var/www/html/index.html
+              EOF
+}
+
+resource "aws_security_group" "web_server_sg" {
+  name        = "Security group for a web server"
+  description = "Allow HTTP Access"
+  vpc_id      = aws_vpc.demo_vpc.id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Web_Server_Security_Group"
+  }
+}
